@@ -24,11 +24,30 @@ Update_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 ); 
 
+
+
+/*Hemos creado el 
+
 /*Ahora tenemos que indicar que el campo credit_card_id de la tabla transactions, será una foreign key de la tabla credit_Card.
  Eso lo haremos mediante el siguiente comando */
 
 ALTER TABLE transaction 
 ADD  CONSTRAINT FK_Credit_card FOREIGN KEY (credit_card_id) REFERENCES credit_card (Id);
+
+/***************************CORRECCIONES *********************************/
+
+# VAmos a hacer un cambio en los campos CVV y PIN para que los mismos pase a ser VARCHAR
+
+ALTER TABLE credit_card
+MODIFY CVV VARCHAR(3) NOT NULL;
+
+ALTER TABLE credit_card
+MODIFY PIN VARCHAR(4) NOT NULL;
+
+# Para ver que se los datos se han grabado correctamente:
+
+DESCRIBE credit_Card;
+/******************************************************************/
 
 /*- Exercici 2 
 El departament de Recursos Humans ha identificat un error en el número de compte de l'usuari amb ID CcU-2938. 
@@ -47,7 +66,7 @@ UPDATE credit_Card
 SET Iban = "R323456312213576817699999", Update_date = current_timestamp()
 WHERE id = "CcU-2938";
 
-/*Excercici 3: ---- Revisarlo
+/*Excercici 3: 
 En la taula "transaction" ingressa un nou usuari amb la següent informació:
 
 Id	108B1D1D-5B23-A76C-55EF-C568E49A99DD
@@ -65,10 +84,52 @@ declined	0*/
 INSERT INTO transaction (id, credit_card_id, company_id, user_id, lat, longitude, amount, declined) 
 VALUES ('108B1D1D-5B23-A76C-55EF-C568E49A99DD',' CcU-9999', ' b-9999', '9999', '829.999', ' -117.999','111.11','0'); 
 
+SELECT * FROM TRANSACTION;
 
+/************************************CORRECCION **************************************************************/
 /*Obtenemos un error. Ese error se debe a que el nuevo registro que queremos introducir tiene tres campos (“credit_card_id”, “company_id” y “User_id”)
- que no existen en las tablas maestros. Para poder insertar este registro, primero habría que dar de alta en las  tablas 
- maestro  credit_card, Data_user y Company.  Una vez actualicemos las tablas maestro, podremos introducir el nuevo registro correctamente. */
+ que no existen en las tablas maestros. Procederemos deshabilitar temporalmente las foreign key, insertar el registro y
+ volver a insertar las foreign key*/
+ 
+
+ALTER TABLE transaction
+DROP FOREIGN KEY transaction_ibfk_1;
+
+ALTER TABLE transaction
+DROP FOREIGN KEY FK_Credit_card;
+
+ALTER TABLE TRANSACTION
+DROP FOREIGN  KEY “FK_User_id”;
+
+ALTER TABLE TRANSACTION
+DROP PRIMARY KEY;
+
+#Volvemos a insertar de nuevo el registro
+
+INSERT INTO transaction (id, credit_card_id, company_id, user_id, lat, longitude, amount, declined) 
+VALUES ('108B1D1D-5B23-A76C-55EF-C568E49A99DD',' CcU-9999', ' b-9999', '9999', '829.999', ' -117.999','111.11','0');
+
+#consulta para ver que se ha grabado
+
+select * from transaction
+where id = "108B1D1D-5B23-A76C-55EF-C568E49A99DD";
+
+#Ahora tenemos que volver a insertar todas las foreign keys en la tabla transaction
+
+
+ALTER TABLE TRANSACTION
+ADD CONSTRAINT FK_Company FOREIGN KEY (company_id) REFERENCES company(id);
+
+ALTER TABLE TRANSACTION
+ADD CONSTRAINT FK_Credit_card FOREIGN KEY (credit_card_id) REFERENCES credit_card(Id);
+
+ALTER TABLE TRANSACTION
+ADD CONSTRAINT FK_User_id FOREIGN KEY (user_id) REFERENCES data_user(id);
+
+ALTER TABLE TRANSACTION
+ADD PRIMARY KEY (id);
+
+/*********************************************************************/
 
 /*- Exercici 4
 Des de recursos humans et sol·liciten eliminar la columna "pan" de la taula credit_*card. Recorda mostrar el canvi realitzat.*/
@@ -125,7 +186,29 @@ WHERE transaction.declined = 0
 GROUP BY company.company_name , company.phone , company.country
 ORDER BY 4 DESC;
 
-SELECT * FROM vistamarketing;
+/******************************************** CORRECCIÓN ******************************/
+
+#para elimiminar el order by de la view Vistamarketing la he modificado con el siguiente comando
+
+CREATE OR REPLACE VIEW VistaMarketing AS
+SELECT company.company_name , company.phone , company.country , AVG(transaction.amount) AS Sales_Average
+FROM transactions.transaction
+LEFT JOIN transactions.company
+ON transaction.company_id = company.id
+WHERE transaction.declined = 0
+GROUP BY company.company_name , company.phone , company.country;
+
+#Hacemos la consulta que nos piden
+
+SELECT * FROM vistamarketing
+order by 4 desc;
+
+
+
+SELECT * FROM vistamarketing
+order by 4 desc;
+
+/*********************************************************************************/
 
 /*Exercici 3
 Filtra la vista VistaMarketing per a mostrar només les companyies que tenen el seu país de residència en "Germany"*/
@@ -206,6 +289,23 @@ RENAME table user TO Data_User;
 
 select * from data_user;
 
+/*************************CORRECCIONES*****************************/
+
+# 8 Se nos pide que cambiemos el nombre de la columna email de la tabla data_user por personal_email.
+
+ALTER TABLE data_user
+RENAME COLUMN email TO personal_email;
+
+select * from data_user;
+
+# 9 Eliminamos la columna website
+
+ALTER TABLE COMPANY
+DROP COLUMN WEBSITE;
+
+SELECT * FROM company; 
+/*********************************************************/
+
 
 
 
@@ -238,7 +338,7 @@ ORDER BY 1 DESC;
 
 SELECT * FROM informetecnico;
 
-#11.47
+#1956
 
 
 
